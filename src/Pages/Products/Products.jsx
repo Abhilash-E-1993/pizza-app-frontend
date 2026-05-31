@@ -7,7 +7,7 @@ import { addProductToCart, getCartDetails } from "../../Redux/Slices/CartSlice";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-function Products(){
+function Products() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const { isLoggedIn } = useSelector((state) => state.auth);
@@ -15,151 +15,155 @@ function Products(){
 
     const [quantities, setQuantities] = useState({});
     const [loadingProducts, setLoadingProducts] = useState({});
+    const [activeCategory, setActiveCategory] = useState("All");
 
     useEffect(() => {
         dispatch(getAllProducts());
     }, [dispatch]);
 
+    const categories = ["All", ...new Set(productsData.map((p) => p.category))];
+
+    const filtered = productsData.filter(
+        (p) => p.inStock && (activeCategory === "All" || p.category === activeCategory)
+    );
+
     const updateQuantity = (productId, newQuantity) => {
-        setQuantities(prev => ({
+        setQuantities((prev) => ({
             ...prev,
-            [productId]: newQuantity > 0 ? newQuantity : 1
+            [productId]: newQuantity > 0 ? newQuantity : 1,
         }));
     };
 
     const handleAddToCart = async (productId, e) => {
         e.preventDefault();
-
         if (!isLoggedIn) {
-            toast.error("Please login to add product to cart");
-            navigate('/auth/login');
+            toast.error("Please login to add items to cart");
+            navigate("/auth/login");
             return;
         }
-
         const quantity = quantities[productId] || 1;
-
-        if (quantity < 1) {
-            toast.error("Please select at least 1 pizza");
-            return;
-        }
-
-        setLoadingProducts(prev => ({ ...prev, [productId]: true }));
-
+        setLoadingProducts((prev) => ({ ...prev, [productId]: true }));
         try {
             for (let i = 0; i < quantity; i++) {
                 const response = await dispatch(addProductToCart(productId));
-                if (!response?.payload?.success) {
-                    throw new Error("Failed to add product");
-                }
+                if (!response?.payload?.success) throw new Error();
             }
             await dispatch(getCartDetails());
-            toast.success(`${quantity} pizza${quantity > 1 ? 's' : ''} added to cart`);
-            setQuantities(prev => ({ ...prev, [productId]: 1 }));
-        } catch (error) {
+            toast.success(`${quantity} item${quantity > 1 ? "s" : ""} added to cart`);
+            setQuantities((prev) => ({ ...prev, [productId]: 1 }));
+        } catch {
             toast.error("Failed to add to cart");
         } finally {
-            setLoadingProducts(prev => ({ ...prev, [productId]: false }));
+            setLoadingProducts((prev) => ({ ...prev, [productId]: false }));
         }
     };
 
-    return(
+    return (
         <Layout>
-            <section className="py-12 bg-gray-50">
+            <section className="py-10 bg-gray-50 min-h-screen">
                 <div className="px-5 mx-auto max-w-6xl">
-                    <div className="mb-12 text-center">
-                        <h1 className="text-4xl font-bold text-gray-900 mb-3">Our Menu</h1>
-                        <p className="text-gray-600 text-lg">Select your favorite pizzas and enjoy!</p>
+
+                    {/* Header */}
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-semibold text-gray-900">Menu</h1>
+                        <p className="text-sm text-gray-500 mt-1">
+                            {filtered.length} item{filtered.length !== 1 ? "s" : ""} available
+                        </p>
                     </div>
 
-                    {productsData.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {productsData.map((item) => {
-                                return item.inStock && (
-                                    <div key={item._id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition overflow-hidden">
-                                        <Link to={`/products/${item._id}`}>
-                                            <div className="relative overflow-hidden h-56">
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.productName}
-                                                    className="w-full h-full object-cover hover:scale-105 transition duration-300"
-                                                />
-                                                <span className="absolute top-3 right-3 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                                                    {item.category}
+                    {/* Category Pills */}
+                    <div className="flex gap-2 flex-wrap mb-8">
+                        {categories.map((cat) => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-4 py-1.5 rounded-full text-sm border transition
+                                    ${activeCategory === cat
+                                        ? "bg-gray-900 text-white border-gray-900"
+                                        : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Grid */}
+                    {filtered.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filtered.map((item) => (
+                                <div
+                                    key={item._id}
+                                    className="bg-white rounded-xl border border-gray-100 hover:border-gray-200 transition overflow-hidden"
+                                >
+                                    <Link to={`/products/${item._id}`}>
+                                        <div className="relative h-48 overflow-hidden bg-gray-100">
+                                            <img
+                                                src={item.image}
+                                                alt={item.productName}
+                                                className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                                            />
+                                            <span className="absolute bottom-2 left-2 bg-white text-gray-600 text-xs px-2.5 py-1 rounded-full border border-gray-100">
+                                                {item.category}
+                                            </span>
+                                        </div>
+                                        <div className="p-4">
+                                            <h2 className="text-sm font-semibold text-gray-900 truncate">
+                                                {item.productName}
+                                            </h2>
+                                            <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                                                {item.description}
+                                            </p>
+                                        </div>
+                                    </Link>
+
+                                    <div className="px-4 pb-4 flex items-center justify-between">
+                                        <span className="text-base font-semibold text-gray-900">
+                                            ₹{item.price}
+                                        </span>
+
+                                        <div className="flex items-center gap-2">
+                                            {/* Qty */}
+                                            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+                                                <button
+                                                    onClick={(e) => { e.preventDefault(); updateQuantity(item._id, (quantities[item._id] || 1) - 1); }}
+                                                    className="px-2 py-1 text-gray-500 hover:bg-gray-50 text-sm"
+                                                >
+                                                    −
+                                                </button>
+                                                <span className="w-8 text-center text-sm text-gray-800">
+                                                    {quantities[item._id] || 1}
                                                 </span>
+                                                <button
+                                                    onClick={(e) => { e.preventDefault(); updateQuantity(item._id, (quantities[item._id] || 1) + 1); }}
+                                                    className="px-2 py-1 text-gray-500 hover:bg-gray-50 text-sm"
+                                                >
+                                                    +
+                                                </button>
                                             </div>
 
-                                            <div className="p-5">
-                                                <h2 className="text-xl font-bold text-gray-900 mb-2 truncate">
-                                                    {item.productName}
-                                                </h2>
-                                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                                                    {item.description}
-                                                </p>
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-2xl font-bold text-yellow-500">
-                                                        ₹{item.price}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </Link>
-
-                                        <div className="px-5 pb-5 border-t">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <span className="text-sm font-medium text-gray-700">Qty:</span>
-                                                <div className="flex items-center border border-gray-300 rounded-lg">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            updateQuantity(item._id, (quantities[item._id] || 1) - 1);
-                                                        }}
-                                                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
-                                                    >
-                                                        −
-                                                    </button>
-                                                    <input
-                                                        type="number"
-                                                        value={quantities[item._id] || 1}
-                                                        onChange={(e) => {
-                                                            e.preventDefault();
-                                                            const val = parseInt(e.target.value) || 1;
-                                                            updateQuantity(item._id, val);
-                                                        }}
-                                                        className="w-12 text-center border-0 outline-none text-sm"
-                                                        min="1"
-                                                    />
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.preventDefault();
-                                                            updateQuantity(item._id, (quantities[item._id] || 1) + 1);
-                                                        }}
-                                                        className="px-2 py-1 text-gray-600 hover:bg-gray-100"
-                                                    >
-                                                        +
-                                                    </button>
-                                                </div>
-                                            </div>
-
+                                            {/* Add */}
                                             <button
                                                 onClick={(e) => handleAddToCart(item._id, e)}
                                                 disabled={loadingProducts[item._id]}
-                                                className="w-full px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
                                             >
-                                                {loadingProducts[item._id] ? "Adding..." : "Add to Cart"}
+                                                {loadingProducts[item._id] ? "Adding…" : "Add"}
                                             </button>
                                         </div>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            ))}
                         </div>
                     ) : (
-                        <div className="text-center py-12">
-                            <p className="text-gray-600 text-lg">No pizzas available right now</p>
-                        </div>
+                        <p className="text-sm text-gray-400 text-center py-16">
+                            Nothing available in this category right now.
+                        </p>
                     )}
                 </div>
             </section>
         </Layout>
-    )
+    );
 }
 
 export default Products;
