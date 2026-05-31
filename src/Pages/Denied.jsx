@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 
-function NotFound() {
+function Denied() {
 
     const navigate = useNavigate(); // programitcally navigate to the previous page
 
@@ -8,10 +8,10 @@ function NotFound() {
         <>
       <main className="flex flex-col items-center justify-center w-full h-screen bg-gradient-to-r from-amber-50 to-orange-300">
         <h1 className="font-extrabold tracking-widest text-white text-9xl">
-          404
+          403
         </h1>
         <div className="absolute px-2 text-sm text-white bg-black rounded rotate-12">
-          Page Not Found
+          Access Denied
         </div>
         <button className="mt-5" onClick={() => navigate(-1)}>
           <a className="relative inline-block text-sm font-medium text-[#fff] group active:text-yellow-500 focus:outline-none focus:ring">
@@ -30,5 +30,4 @@ function NotFound() {
     )
 }
 
-export default NotFound;
-
+export default Denied;

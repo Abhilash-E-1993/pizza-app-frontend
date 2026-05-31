@@ -2,91 +2,176 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../../Helpers/axiosInstance";
 import toast from "react-hot-toast";
 
+// SAFE LOCAL STORAGE
+const storedData = localStorage.getItem('data');
+
 const initialState = {
-    isLoggedIn: localStorage.getItem('isLoggedIn') === 'true' || false,
+    isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
     role: localStorage.getItem('role') || '',
-    data: JSON.parse(localStorage.getItem('data')) || {},
+    data: storedData ? JSON.parse(storedData) : {},
 };
 
-export const createAccount = createAsyncThunk('/auth/createAccount', async (data) => {
-    console.log("incoming data to the thunk", data);
-    try {
-        const response = axiosInstance.post('/users', data);    
-        toast.promise(response, {
-            success: (resolvedPromise) => {
-                return resolvedPromise?.data?.message;
-            },
-            loading: 'Hold back tight, we are registering your id...',
-            error: 'Ohh No!, Something went wrong. Please try again.',
-        });
-        const apiResponse = await response;
-        return apiResponse;
-    } catch(error) {
-        console.log(error);
-    }
-});
+// ================= CREATE ACCOUNT =================
 
-export const login = createAsyncThunk('/auth/login', async (data) => {
-    console.log("incoming data to the thunk", data);
-    try {
-        const response = axiosInstance.post('/auth/login', data);    
-        toast.promise(response, {
-            success: (resolvedPromise) => {
-                return resolvedPromise?.data?.message;
-            },
-            loading: 'Hold back tight, we are registering your id...',
-            error: 'Ohh No!, Something went wrong. Please try again.',
-        });
-        const apiResponse = await response;
-        return apiResponse;
-    } catch(error) {
-        console.log(error);
-    }
-});
+export const createAccount = createAsyncThunk(
+    "/auth/createAccount",
 
-export const logout = createAsyncThunk('/auth/logout', async () => {
-    console.log("incoming data to the thunk");
-    try {
-        const response = axiosInstance.post('/auth/logout');    
-        toast.promise(response, {
-            success: (resolvedPromise) => {
-                return resolvedPromise?.data?.message;
-            },
-            loading: 'Logging out...',
-            error: 'Ohh No!, Something went wrong. Please try again.',
-        });
-        const apiResponse = await response;
-        return apiResponse;
-    } catch(error) {
-        console.log(error);
+    async (data, thunkAPI) => {
+
+        try {
+
+            const response = await axiosInstance.post(
+                "/users/register",
+                data
+            );
+
+            toast.success(response?.data?.message);
+
+            return response.data;
+
+        } catch (err) {
+
+            toast.error(
+                err?.response?.data?.message || "Something went wrong"
+            );
+
+            return thunkAPI.rejectWithValue(
+                err?.response?.data
+            );
+        }
     }
-});
+);
+
+// ================= LOGIN =================
+
+export const login = createAsyncThunk(
+    "/auth/login",
+
+    async (data, thunkAPI) => {
+
+        try {
+
+            const response = await axiosInstance.post(
+                "/auth/login",
+                data
+            );
+
+            toast.success(response?.data?.message);
+
+            // ONLY RETURN SERIALIZABLE DATA
+            return response.data;
+
+        } catch (err) {
+
+            toast.error(
+                err?.response?.data?.message || "Something went wrong"
+            );
+
+            return thunkAPI.rejectWithValue(
+                err?.response?.data
+            );
+        }
+    }
+);
+
+// ================= LOGOUT =================
+
+export const logout = createAsyncThunk(
+    "/auth/logout",
+
+    async (_, thunkAPI) => {
+
+        try {
+
+            const response = await axiosInstance.post(
+                "/auth/logout"
+            );
+
+            toast.success(response?.data?.message);
+
+            return response.data;
+
+        } catch (err) {
+
+            toast.error(
+                err?.response?.data?.message || "Something went wrong"
+            );
+
+            return thunkAPI.rejectWithValue(
+                err?.response?.data
+            );
+        }
+    }
+);
+
+// ================= SLICE =================
 
 const AuthSlice = createSlice({
     name: 'auth',
-    initialState,
-    reducers: {},
-    extraReducers: (builder) => {
-        builder
-        .addCase(login.fulfilled, (state, action) => {
-            // reducer which will execute when the login thunk is fulfilled
-            state.isLoggedIn = true;
-            state.role = action?.payload?.data?.data?.userRole,
-            state.data = action?.payload?.data?.data?.userData
 
-            localStorage.setItem('isLoggedIn', true);
-            localStorage.setItem('role', action?.payload?.data?.data?.userRole);
-            localStorage.setItem('data', JSON.stringify(action?.payload?.data?.data?.userData));
+    initialState,
+
+    reducers: {},
+
+    extraReducers: (builder) => {
+
+        builder
+
+        // ================= LOGIN SUCCESS =================
+
+        .addCase(login.fulfilled, (state, action) => {
+
+            state.isLoggedIn = true;
+
+            state.role = action?.payload?.data?.role;
+
+            state.data = action?.payload?.data?.userData;
+
+            // STORE IN LOCAL STORAGE
+
+            localStorage.setItem(
+                'isLoggedIn',
+                'true'
+            );
+
+            localStorage.setItem(
+                'role',
+                action?.payload?.data?.role || ''
+            );
+
+            localStorage.setItem(
+                'data',
+                JSON.stringify(
+                    action?.payload?.data?.userData || {}
+                )
+            );
         })
+
+        // ================= LOGOUT SUCCESS =================
+
         .addCase(logout.fulfilled, (state) => {
-            // reducer which will execute when the logout thunk is fulfilled
-            localStorage.setItem('isLoggedIn', false);
-            localStorage.setItem('role', '');
-            localStorage.setItem('data', JSON.stringify({}));
+
+            localStorage.setItem(
+                'isLoggedIn',
+                'false'
+            );
+
+            localStorage.setItem(
+                'role',
+                ''
+            );
+
+            localStorage.setItem(
+                'data',
+                JSON.stringify({})
+            );
+
             state.isLoggedIn = false;
+
             state.role = '';
+
             state.data = {};
-        })
+        });
     }
 });
 

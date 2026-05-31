@@ -1,76 +1,189 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axiosInstance from "../../Helpers/axiosInstance";
 import toast from "react-hot-toast";
 
 const initialState = {
-    cartsData: ''
-}
-
-export const addProductToCart = createAsyncThunk('/cart/addProduct', async (productId) => {
-    try {
-        const response = axiosInstance.post(`/carts/add/${productId}`);
-        toast.promise(response, {
-            loading: 'Adding product to cart',
-            error: 'Something went wrong cannot add product to cart',
-            success: 'Product added successfully',
-        });
-        const apiResponse = await response;
-        return apiResponse;
-    } catch(error) {
-        console.log(error);
-        toast.error('Something went wrong');
-    }
-});
-
-export const removeProductFromCart = createAsyncThunk('/cart/removeProduct', async (productId) => {
-    try {
-        const response = axiosInstance.post(`/carts/remove/${productId}`);
-        toast.promise(response, {
-            loading: 'Removing product from cart',
-            error: 'Something went wrong cannot remove product from cart',
-            success: 'Product removed successfully',
-        });
-        const apiResponse = await response;
-        return apiResponse;
-    } catch(error) {
-        console.log(error);
-        toast.error('Something went wrong');
-    }
-});
-
-export const getCartDetails = createAsyncThunk('/cart/getDetails', async () => {
-    try {
-        const response = axiosInstance.get(`/carts`);
-        toast.promise(response, {
-            loading: 'Fetching cart details',
-            error: 'Something went wrong cannot fetch cart',
-            success: 'Cart fetched successfully',
-        });
-        const apiResponse = await response;
-        
-        return apiResponse;
-    } catch(error) {
-        console.log(error.response);
-        if(error?.response?.status === 401) {
-            toast.error('Please login to view cart');
-            return {
-                isUnauthorized: true
-            }
-        }
-        toast.error('Something went wrong');
-    }
-});
-
-const cartSlice = createSlice({
-    name: 'cart',
-    initialState,
-    reducers: {
+    cartsData: {
+        items: []
     },
+};
+
+// ================= ADD PRODUCT =================
+
+export const addProductToCart = createAsyncThunk(
+    "/cart/addproduct",
+
+    async (productId, thunkAPI) => {
+
+        try {
+
+            const response = axiosInstance.post(
+                `/user/cart/add/${productId}`
+            );
+
+            const apiResponse = await response;
+
+            return apiResponse.data;
+
+        } catch (error) {
+
+            console.log(error);
+
+            toast.error(error?.response?.data?.message || "Failed to add product");
+
+            return thunkAPI.rejectWithValue(
+                error?.response?.data
+            );
+        }
+    }
+);
+
+// ================= REMOVE PRODUCT =================
+
+export const removeProductFromCart = createAsyncThunk(
+    "/cart/removeproduct",
+
+    async (productId, thunkAPI) => {
+
+        try {
+
+            const response = axiosInstance.post(
+                `/user/cart/remove/${productId}`
+            );
+
+            const apiResponse = await response;
+
+            return apiResponse.data;
+
+        } catch (error) {
+
+            console.log(error);
+
+            toast.error(error?.response?.data?.message || "Failed to remove product");
+
+            return thunkAPI.rejectWithValue(
+                error?.response?.data
+            );
+        }
+    }
+);
+
+// ================= GET CART =================
+
+export const getCartDetails = createAsyncThunk(
+    "/cart/getDetails",
+
+    async (_, thunkAPI) => {
+
+        try {
+
+            const response = axiosInstance.get(
+                `/user/cart`
+            );
+
+            const apiResponse = await response;
+
+            return apiResponse.data;
+
+        } catch (error) {
+
+            console.log(error?.response);
+
+            if (error?.response?.status === 401) {
+
+                return thunkAPI.rejectWithValue({
+                    isUnauthorized: true
+                });
+            }
+
+            toast.error(error?.response?.data?.message || "Failed to fetch cart");
+
+            return thunkAPI.rejectWithValue(
+                error?.response?.data
+            );
+        }
+    }
+);
+
+// ================= CLEAR CART =================
+
+export const clearCart = createAsyncThunk(
+    "/cart/clear",
+
+    async (_, thunkAPI) => {
+
+        try {
+
+            const response = axiosInstance.delete(
+                `/user/cart/clear`
+            );
+
+            const apiResponse = await response;
+
+            return apiResponse.data;
+
+        } catch (error) {
+
+            console.log(error?.response);
+
+            toast.error(error?.response?.data?.message || "Failed to clear cart");
+
+            return thunkAPI.rejectWithValue(
+                error?.response?.data
+            );
+        }
+    }
+);
+
+// ================= SLICE =================
+
+const cartslice = createSlice({
+    name: 'cart',
+
+    initialState,
+
+    reducers: {},
+
     extraReducers: (builder) => {
-        builder.addCase(getCartDetails.fulfilled, (state, action) => {
-            state.cartsData = action?.payload?.data?.data;
+
+        builder
+
+        .addCase(addProductToCart.fulfilled,
+            (state, action) => {
+
+            state.cartsData =
+                action?.payload?.data;
+        })
+
+        .addCase(removeProductFromCart.fulfilled,
+            (state, action) => {
+
+            state.cartsData =
+                action?.payload?.data;
+        })
+
+        .addCase(getCartDetails.fulfilled,
+            (state, action) => {
+
+            state.cartsData =
+                action?.payload?.data || { items: [] };
+        })
+
+        .addCase(getCartDetails.rejected,
+            (state, action) => {
+
+            if (action?.payload?.isUnauthorized) {
+                state.cartsData = { items: [] };
+            }
+        })
+
+        .addCase(clearCart.fulfilled,
+            (state, action) => {
+
+            state.cartsData =
+                action?.payload?.data || { items: [] };
         });
     }
 });
 
-export default cartSlice.reducer;
+export default cartslice.reducer;
