@@ -8,6 +8,7 @@ const storedData = localStorage.getItem('data');
 const initialState = {
     isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
     role: localStorage.getItem('role') || '',
+    token: localStorage.getItem('token') || '',
     data: storedData ? JSON.parse(storedData) : {},
 };
 
@@ -127,6 +128,9 @@ const AuthSlice = createSlice({
 
             state.data = action?.payload?.data?.userData;
 
+            const token = action?.payload?.token || action?.payload?.data?.token || '';
+            state.token = token;
+
             // STORE IN LOCAL STORAGE
 
             localStorage.setItem(
@@ -145,6 +149,10 @@ const AuthSlice = createSlice({
                     action?.payload?.data?.userData || {}
                 )
             );
+
+            if (token) {
+                localStorage.setItem('token', token);
+            }
         })
 
         // ================= LOGOUT SUCCESS =================
@@ -162,6 +170,11 @@ const AuthSlice = createSlice({
             );
 
             localStorage.setItem(
+                'token',
+                ''
+            );
+
+            localStorage.setItem(
                 'data',
                 JSON.stringify({})
             );
@@ -169,6 +182,8 @@ const AuthSlice = createSlice({
             state.isLoggedIn = false;
 
             state.role = '';
+
+            state.token = '';
 
             state.data = {};
         });

@@ -33,7 +33,7 @@ function Layout({ children }) {
 
     useEffect(() => {
         if (isLoggedIn) fetchCartDetails();
-    }, []);
+    }, [isLoggedIn]);
 
     useEffect(() => {
         function handleClickOutside(e) {

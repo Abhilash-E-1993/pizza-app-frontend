@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { login } from "../../Redux/Slices/AuthSlice";
+import { getCartDetails } from "../../Redux/Slices/CartSlice";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import LoginPresentation from "./LoginPresentation";
@@ -67,12 +68,14 @@ function Login() {
                     apiResponse?.message
                 );
 
+                // LOAD CART AFTER LOGIN
+                await dispatch(getCartDetails()).unwrap().catch(() => {
+                    // ignore cart fetch failure here; Layout will handle auth state cleanup if needed
+                });
+
                 // SMALL DELAY FOR STATE UPDATE
-
                 setTimeout(() => {
-
                     navigate("/");
-
                 }, 500);
             }
 
