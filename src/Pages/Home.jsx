@@ -1,8 +1,8 @@
-import pizzaImage from "../assets/images/pizzaImage.png";
-import cookingImage from "../assets/images/cookImage.png";
-import OrderFood from "../assets/images/foodOrder.png";
-import pickUpImage from "../assets/images/Pickup.png";
-import enjoyImage from "../assets/images/Enjoy.png";
+import pizzaImage from "../assets/Images/pizzaImage.png";
+import cookingImage from "../assets/Images/cookImage.png";
+import OrderFood from "../assets/Images/foodOrder.png";
+import pickUpImage from "../assets/Images/pickup.png";
+import enjoyImage from "../assets/Images/enjoy.png";
 import Layout from "../Layouts/Layout";
 import { Link } from "react-router-dom";
 

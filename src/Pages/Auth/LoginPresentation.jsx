@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import Pizzalogo from "../../assets/images/pizzaLogo.png";
+import Pizzalogo from "../../assets/Images/pizzaLogo.png";
 
 function LoginPresentation({ handleFormSubmit, handleUserInput }) {
     return (
