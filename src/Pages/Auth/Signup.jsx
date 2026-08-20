@@ -3,13 +3,15 @@ import toast from "react-hot-toast";
 import SignUpPresentation from "./SignupPresentation";
 import { useDispatch } from "react-redux";
 import { createAccount, login } from "../../Redux/Slices/AuthSlice";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Signup() {
 
     const dispatch = useDispatch();
-
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const from = location.state?.from || "/products";
 
     const [signUpState, setSignUpState] = useState({
         firstName: '',
@@ -17,10 +19,14 @@ function Signup() {
         mobileNumber: '',
         password: ''
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     function handleUserInput(e) {
 
         const { name, value } = e.target;
+
+        setErrorMessage("");
 
         setSignUpState({
             ...signUpState,
@@ -32,7 +38,8 @@ function Signup() {
 
         e.preventDefault();
 
-        // VALIDATIONS
+        // VALIDATIONS — kept in sync with the backend contract:
+        // required: firstName, email, password (>= 6), mobileNumber
 
         if (
             !signUpState.email ||
@@ -41,19 +48,7 @@ function Signup() {
             !signUpState.firstName
         ) {
 
-            toast.error("All fields are mandatory");
-
-            return;
-        }
-
-        if (
-            signUpState.firstName.length < 5 ||
-            signUpState.firstName.length > 20
-        ) {
-
-            toast.error(
-                "First name should be between 5 and 20 characters"
-            );
+            toast.error("All fields are mandatory", { id: "register-error" });
 
             return;
         }
@@ -63,7 +58,14 @@ function Signup() {
             !signUpState.email.includes('.')
         ) {
 
-            toast.error("Invalid email address");
+            toast.error("Invalid email address", { id: "register-error" });
+
+            return;
+        }
+
+        if (signUpState.password.length < 6) {
+
+            toast.error("Password must be at least 6 characters", { id: "register-error" });
 
             return;
         }
@@ -74,11 +76,15 @@ function Signup() {
         ) {
 
             toast.error(
-                "Mobile number should be between 10 and 12 digits"
+                "Mobile number should be between 10 and 12 digits",
+                { id: "register-error" }
             );
 
             return;
         }
+
+        setIsSubmitting(true);
+        setErrorMessage("");
 
         try {
 
@@ -86,35 +92,27 @@ function Signup() {
                 createAccount(signUpState)
             ).unwrap();
 
-            console.log("SIGNUP RESPONSE", apiResponse);
+            if (apiResponse?.success || apiResponse?.user) {
 
-            // SUCCESS - registration returns message + user, not a success field
-
-            if (apiResponse?.message) {
-
-                toast.success(
-                    "Registration successful! Logging you in..."
-                );
-
+                // Auto-login right after a successful registration
                 const loginResponse = await dispatch(login({
                     email: signUpState.email,
                     password: signUpState.password
                 })).unwrap();
 
-                console.log("AUTO LOGIN RESPONSE", loginResponse);
-
                 if (loginResponse?.success) {
-                    navigate("/");
+                    navigate(from, { replace: true });
                 }
             }
 
         } catch (error) {
 
-            console.log(error);
+            // Backend message shown inline — e.g. "user with this email
+            // already exists", "password must be at least 6 characters"
+            setErrorMessage(error?.message || "Registration failed. Please try again.");
 
-            toast.error(
-                error?.message || "Registration failed"
-            );
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -122,6 +120,9 @@ function Signup() {
         <SignUpPresentation
             handleFormSubmit={handleFormSubmit}
             handleUserInput={handleUserInput}
+            signUpState={signUpState}
+            isSubmitting={isSubmitting}
+            errorMessage={errorMessage}
         />
     );
 }

@@ -1,16 +1,18 @@
 import { Link } from "react-router-dom";
-import Pizzalogo from "../../assets/Images/pizzaLogo.png";
+import Pizzalogo from "../../assets/images/pizzaLogo.png";
 
-function SignUpPresentation({ handleUserInput, handleFormSubmit }) {
+function SignUpPresentation({ handleUserInput, handleFormSubmit, signUpState, isSubmitting, errorMessage }) {
+    const inputClasses = "w-full text-sm px-3.5 py-3 border border-gray-200 rounded-xl outline-none focus:border-gray-400 focus:ring-4 focus:ring-gray-100 transition bg-white text-gray-900 placeholder-gray-300";
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-5 py-10">
             <div className="w-full max-w-sm">
 
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white border border-gray-100 mb-4">
+                    <Link to="/" className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white border border-gray-100 mb-4">
                         <img src={Pizzalogo} alt="PizzaHub" className="w-12 h-12 object-contain" />
-                    </div>
+                    </Link>
                     <h1 className="text-lg font-semibold text-gray-900">Create an account</h1>
                     <p className="text-sm text-gray-400 mt-1">Join PizzaHub today</p>
                 </div>
@@ -19,19 +21,20 @@ function SignUpPresentation({ handleUserInput, handleFormSubmit }) {
                 <div className="bg-white border border-gray-100 rounded-2xl p-7 shadow-sm">
                     <form onSubmit={handleFormSubmit} className="space-y-5">
 
+                        {errorMessage && (
+                            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2.5">
+                                {errorMessage}
+                            </p>
+                        )}
+
                         <div>
                             <label htmlFor="firstName" className="block text-sm font-medium text-gray-600 mb-1.5">
                                 First name
                             </label>
                             <input
-                                type="text"
-                                id="firstName"
-                                name="firstName"
-                                required
-                                minLength={5}
-                                placeholder="John"
-                                onChange={handleUserInput}
-                                className="w-full text-sm px-3.5 py-3 border border-gray-200 rounded-xl outline-none focus:border-gray-400 focus:ring-4 focus:ring-gray-100 transition bg-white text-gray-900 placeholder-gray-300"
+                                type="text" id="firstName" name="firstName" required
+                                placeholder="John" value={signUpState.firstName} onChange={handleUserInput}
+                                className={inputClasses}
                             />
                         </div>
 
@@ -40,13 +43,9 @@ function SignUpPresentation({ handleUserInput, handleFormSubmit }) {
                                 Email
                             </label>
                             <input
-                                type="email"
-                                id="email"
-                                name="email"
-                                required
-                                placeholder="you@example.com"
-                                onChange={handleUserInput}
-                                className="w-full text-sm px-3.5 py-3 border border-gray-200 rounded-xl outline-none focus:border-gray-400 focus:ring-4 focus:ring-gray-100 transition bg-white text-gray-900 placeholder-gray-300"
+                                type="email" id="email" name="email" required
+                                placeholder="you@example.com" value={signUpState.email} onChange={handleUserInput}
+                                className={inputClasses}
                             />
                         </div>
 
@@ -55,14 +54,9 @@ function SignUpPresentation({ handleUserInput, handleFormSubmit }) {
                                 Mobile number
                             </label>
                             <input
-                                type="tel"
-                                id="mobileNumber"
-                                name="mobileNumber"
-                                required
-                                maxLength={12}
-                                placeholder="10-digit number"
-                                onChange={handleUserInput}
-                                className="w-full text-sm px-3.5 py-3 border border-gray-200 rounded-xl outline-none focus:border-gray-400 focus:ring-4 focus:ring-gray-100 transition bg-white text-gray-900 placeholder-gray-300"
+                                type="tel" id="mobileNumber" name="mobileNumber" required maxLength={12}
+                                placeholder="10-digit number" value={signUpState.mobileNumber} onChange={handleUserInput}
+                                className={inputClasses}
                             />
                         </div>
 
@@ -71,21 +65,21 @@ function SignUpPresentation({ handleUserInput, handleFormSubmit }) {
                                 Password
                             </label>
                             <input
-                                type="password"
-                                id="password"
-                                name="password"
-                                required
-                                placeholder="••••••••"
-                                onChange={handleUserInput}
-                                className="w-full text-sm px-3.5 py-3 border border-gray-200 rounded-xl outline-none focus:border-gray-400 focus:ring-4 focus:ring-gray-100 transition bg-white text-gray-900 placeholder-gray-300"
+                                type="password" id="password" name="password" required minLength={6}
+                                placeholder="At least 6 characters" value={signUpState.password} onChange={handleUserInput}
+                                className={inputClasses}
                             />
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full py-3 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-gray-700 active:scale-[0.98] transition-all"
+                            disabled={isSubmitting}
+                            className="w-full py-3 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-gray-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            Create account
+                            {isSubmitting && (
+                                <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                            )}
+                            {isSubmitting ? "Creating account…" : "Create account"}
                         </button>
 
                     </form>
@@ -119,3 +113,4 @@ function SignUpPresentation({ handleUserInput, handleFormSubmit }) {
 }
 
 export default SignUpPresentation;
+

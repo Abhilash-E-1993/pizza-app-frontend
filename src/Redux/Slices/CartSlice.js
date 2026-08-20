@@ -17,19 +17,18 @@ export const addProductToCart = createAsyncThunk(
 
         try {
 
-            const response = axiosInstance.post(
+            const apiResponse = await axiosInstance.post(
                 `/user/cart/add/${productId}`
             );
-
-            const apiResponse = await response;
 
             return apiResponse.data;
 
         } catch (error) {
 
-            console.log(error);
-
-            toast.error(error?.response?.data?.message || "Failed to add product");
+            toast.error(
+                error?.response?.data?.message || "Failed to add product",
+                { id: `add-${productId}` }
+            );
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -47,19 +46,18 @@ export const removeProductFromCart = createAsyncThunk(
 
         try {
 
-            const response = axiosInstance.post(
+            const apiResponse = await axiosInstance.post(
                 `/user/cart/remove/${productId}`
             );
-
-            const apiResponse = await response;
 
             return apiResponse.data;
 
         } catch (error) {
 
-            console.log(error);
-
-            toast.error(error?.response?.data?.message || "Failed to remove product");
+            toast.error(
+                error?.response?.data?.message || "Failed to remove product",
+                { id: `remove-${productId}` }
+            );
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -77,26 +75,21 @@ export const getCartDetails = createAsyncThunk(
 
         try {
 
-            const response = axiosInstance.get(
-                `/user/cart`
+            const apiResponse = await axiosInstance.get(
+                `/user/cart/`
             );
-
-            const apiResponse = await response;
 
             return apiResponse.data;
 
         } catch (error) {
 
-            console.log(error?.response);
-
-            if (error?.response?.status === 401) {
-
-                return thunkAPI.rejectWithValue({
-                    isUnauthorized: true
-                });
+            // 401 is handled globally by the axios interceptor — stay quiet here.
+            if (error?.response?.status !== 401) {
+                toast.error(
+                    error?.response?.data?.message || "Failed to fetch cart",
+                    { id: "cart-error" }
+                );
             }
-
-            toast.error(error?.response?.data?.message || "Failed to fetch cart");
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -114,19 +107,18 @@ export const clearCart = createAsyncThunk(
 
         try {
 
-            const response = axiosInstance.delete(
+            const apiResponse = await axiosInstance.delete(
                 `/user/cart/clear`
             );
-
-            const apiResponse = await response;
 
             return apiResponse.data;
 
         } catch (error) {
 
-            console.log(error?.response);
-
-            toast.error(error?.response?.data?.message || "Failed to clear cart");
+            toast.error(
+                error?.response?.data?.message || "Failed to clear cart",
+                { id: "cart-error" }
+            );
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -142,7 +134,13 @@ const cartslice = createSlice({
 
     initialState,
 
-    reducers: {},
+    reducers: {
+        // The backend clears the cart after a successful order — mirror that
+        // locally without firing an extra network request.
+        emptyCartLocal: (state) => {
+            state.cartsData = { items: [] };
+        },
+    },
 
     extraReducers: (builder) => {
 
@@ -152,14 +150,14 @@ const cartslice = createSlice({
             (state, action) => {
 
             state.cartsData =
-                action?.payload?.data;
+                action?.payload?.data || { items: [] };
         })
 
         .addCase(removeProductFromCart.fulfilled,
             (state, action) => {
 
             state.cartsData =
-                action?.payload?.data;
+                action?.payload?.data || { items: [] };
         })
 
         .addCase(getCartDetails.fulfilled,
@@ -167,14 +165,6 @@ const cartslice = createSlice({
 
             state.cartsData =
                 action?.payload?.data || { items: [] };
-        })
-
-        .addCase(getCartDetails.rejected,
-            (state, action) => {
-
-            if (action?.payload?.isUnauthorized) {
-                state.cartsData = { items: [] };
-            }
         })
 
         .addCase(clearCart.fulfilled,
@@ -185,5 +175,7 @@ const cartslice = createSlice({
         });
     }
 });
+
+export const { emptyCartLocal } = cartslice.actions;
 
 export default cartslice.reducer;

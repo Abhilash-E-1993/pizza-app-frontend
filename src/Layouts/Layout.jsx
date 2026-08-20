@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import Pizzalogo from "../assets/Images/pizzaLogo.png";
+import Pizzalogo from "../assets/images/pizzaLogo.png";
 import Footer from "../Components/Footer";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../Redux/Slices/AuthSlice";
@@ -15,25 +15,22 @@ function Layout({ children }) {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const firstName = data?.userData?.firstName || data?.firstName || "";
-    const email = data?.userData?.email || data?.email || "";
+    const firstName = data?.firstName || data?.userData?.firstName || "";
+    const email = data?.email || data?.userData?.email || "";
     const initials = firstName ? firstName.charAt(0).toUpperCase() : "U";
     const cartCount = cartsData?.items?.length ?? 0;
 
     async function handleLogout(e) {
         e.preventDefault();
         setDropdownOpen(false);
-        dispatch(logout());
+        await dispatch(logout());
+        navigate("/auth/login");
     }
 
-    async function fetchCartDetails() {
-        const response = await dispatch(getCartDetails());
-        if (response?.payload?.isUnauthorized) dispatch(logout());
-    }
-
+    // Load the cart once the session is confirmed (badge count in the navbar).
     useEffect(() => {
-        if (isLoggedIn) fetchCartDetails();
-    }, [isLoggedIn]);
+        if (isLoggedIn) dispatch(getCartDetails());
+    }, [dispatch, isLoggedIn]);
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -48,55 +45,57 @@ function Layout({ children }) {
     return (
         <div className="min-h-screen flex flex-col">
 
-            <nav className="h-14 border-b border-gray-100 bg-white">
+            <nav className="h-14 border-b border-gray-100 bg-white sticky top-0 z-40">
                 <div className="max-w-6xl mx-auto px-5 h-full flex items-center justify-between">
 
-                    {/* Logo */}
+                    {/* Logo — always visible */}
                     <button
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate(isLoggedIn ? "/products" : "/")}
                         className="flex items-center gap-2 text-gray-900 font-medium text-sm"
                     >
                         <img src={Pizzalogo} alt="Pizza App" className="h-7 w-7 object-contain" />
                         PIZZAHUB
                     </button>
 
-                    {/* Right */}
+                    {/* Right side — menu links only render for logged-in users */}
                     <div className="flex items-center gap-1">
 
-                        <Link
-                            to="/products"
-                            className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition"
-                        >
-                            Menu
-                        </Link>
-
-                        {isLoggedIn && isAdmin && (
-                            <Link
-                                to="/admin/addproduct"
-                                className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition"
-                            >
-                                Admin
-                            </Link>
-                        )}
-
                         {isLoggedIn && (
-                            <Link
-                                to="/cart"
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                </svg>
-                                Cart
-                                {cartCount > 0 && (
-                                    <span className="text-xs bg-gray-900 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </Link>
-                        )}
+                            <>
+                                <Link
+                                    to="/products"
+                                    className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition"
+                                >
+                                    Menu
+                                </Link>
 
-                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                                {isAdmin && (
+                                    <Link
+                                        to="/admin/addproduct"
+                                        className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition"
+                                    >
+                                        Admin
+                                    </Link>
+                                )}
+
+                                <Link
+                                    to="/cart"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-50 transition"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                    </svg>
+                                    Cart
+                                    {cartCount > 0 && (
+                                        <span className="text-xs bg-gray-900 text-white rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                                            {cartCount}
+                                        </span>
+                                    )}
+                                </Link>
+
+                                <div className="w-px h-4 bg-gray-200 mx-1" />
+                            </>
+                        )}
 
                         {isLoggedIn ? (
                             /* Avatar + dropdown */
@@ -108,7 +107,7 @@ function Layout({ children }) {
                                     <div className="w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-medium flex items-center justify-center flex-shrink-0">
                                         {initials}
                                     </div>
-                                    <span className="text-sm text-gray-700 hidden sm:block">{firstName}</span>
+                                    <span className="text-sm text-gray-700 hidden sm:block">{firstName || "Account"}</span>
                                     <svg
                                         className={`w-3.5 h-3.5 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
                                         fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
@@ -119,15 +118,23 @@ function Layout({ children }) {
 
                                 {dropdownOpen && (
                                     <div className="absolute right-0 mt-1 w-52 bg-white border border-gray-100 rounded-xl shadow-sm z-50 overflow-hidden">
-                                        {/* Account info */}
                                         <div className="px-4 py-3 border-b border-gray-50">
-                                            <p className="text-xs font-medium text-gray-900">{firstName}</p>
+                                            <p className="text-xs font-medium text-gray-900">{firstName || "Account"}</p>
                                             <p className="text-xs text-gray-400 truncate mt-0.5">{email}</p>
                                         </div>
 
-                                        {/* Links */}
                                         <div className="py-1">
-                                         
+                                            <Link
+                                                to="/orders"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition"
+                                            >
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.6" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                My orders
+                                            </Link>
+
 
                                             {isAdmin && (
                                                 <Link
@@ -180,3 +187,4 @@ function Layout({ children }) {
 }
 
 export default Layout;
+

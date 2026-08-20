@@ -2,15 +2,38 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axiosInstance from "../../Helpers/axiosInstance";
 import toast from "react-hot-toast";
 
-// SAFE LOCAL STORAGE
-const storedData = localStorage.getItem('data');
+// Auth is cookie-based (httpOnly) — the ONLY source of truth is the server.
+// localStorage keeps a *display-only* cache of the profile (firstName/email)
+// so the navbar doesn't flicker while /auth/verify is in flight. It is never
+// used to decide "isLoggedIn".
+const cachedUser = (() => {
+    try {
+        return JSON.parse(localStorage.getItem("data")) || {};
+    } catch {
+        return {};
+    }
+})();
 
 const initialState = {
-    isLoggedIn: localStorage.getItem('isLoggedIn') === 'true',
-    role: localStorage.getItem('role') || '',
-    token: localStorage.getItem('token') || '',
-    data: storedData ? JSON.parse(storedData) : {},
+    isLoggedIn: false,
+    role: "",
+    data: cachedUser,
+    authChecked: false, // flips true once the first /auth/verify resolves
 };
+
+// ================= VERIFY SESSION (app boot) =================
+// Silent by design — a 401 here just means "visitor is not logged in".
+export const verifyAuth = createAsyncThunk(
+    "/auth/verify",
+    async (_, thunkAPI) => {
+        try {
+            const response = await axiosInstance.get("/auth/verify");
+            return response.data; // { success, message, data: { id, email, role } }
+        } catch (err) {
+            return thunkAPI.rejectWithValue(err?.response?.data);
+        }
+    }
+);
 
 // ================= CREATE ACCOUNT =================
 
@@ -26,14 +49,15 @@ export const createAccount = createAsyncThunk(
                 data
             );
 
-            toast.success(response?.data?.message);
+            toast.success(response?.data?.message || "Account created", { id: "register-success" });
 
             return response.data;
 
         } catch (err) {
 
             toast.error(
-                err?.response?.data?.message || "Something went wrong"
+                err?.response?.data?.message || "Something went wrong",
+                { id: "register-error" }
             );
 
             return thunkAPI.rejectWithValue(
@@ -57,7 +81,7 @@ export const login = createAsyncThunk(
                 data
             );
 
-            toast.success(response?.data?.message);
+            toast.success(response?.data?.message || "Logged in", { id: "auth-success" });
 
             // ONLY RETURN SERIALIZABLE DATA
             return response.data;
@@ -65,7 +89,8 @@ export const login = createAsyncThunk(
         } catch (err) {
 
             toast.error(
-                err?.response?.data?.message || "Something went wrong"
+                err?.response?.data?.message || "Something went wrong",
+                { id: "auth-error" }
             );
 
             return thunkAPI.rejectWithValue(
@@ -88,16 +113,14 @@ export const logout = createAsyncThunk(
                 "/auth/logout"
             );
 
-            toast.success(response?.data?.message);
+            toast.success(response?.data?.message || "Logged out", { id: "auth-success" });
 
             return response.data;
 
         } catch (err) {
 
-            toast.error(
-                err?.response?.data?.message || "Something went wrong"
-            );
-
+            // Even if the request fails (offline / cold start) we still clear
+            // local state below — the user asked to log out.
             return thunkAPI.rejectWithValue(
                 err?.response?.data
             );
@@ -107,16 +130,44 @@ export const logout = createAsyncThunk(
 
 // ================= SLICE =================
 
+function clearAuthState(state) {
+    state.isLoggedIn = false;
+    state.role = "";
+    state.data = {};
+    localStorage.removeItem("data");
+}
+
 const AuthSlice = createSlice({
     name: 'auth',
 
     initialState,
 
-    reducers: {},
+    reducers: {
+        // Used by the axios 401 interceptor (via App.jsx event listener) —
+        // wipes local auth state without calling the API.
+        forceLogout: (state) => {
+            clearAuthState(state);
+        },
+    },
 
     extraReducers: (builder) => {
 
         builder
+
+        // ================= VERIFY =================
+
+        .addCase(verifyAuth.fulfilled, (state, action) => {
+            state.isLoggedIn = true;
+            state.authChecked = true;
+            state.role = action?.payload?.data?.role || "";
+            // Merge keeps cached firstName — /auth/verify only returns { id, email, role }
+            state.data = { ...state.data, ...(action?.payload?.data || {}) };
+        })
+
+        .addCase(verifyAuth.rejected, (state) => {
+            clearAuthState(state);
+            state.authChecked = true;
+        })
 
         // ================= LOGIN SUCCESS =================
 
@@ -124,70 +175,29 @@ const AuthSlice = createSlice({
 
             state.isLoggedIn = true;
 
-            state.role = action?.payload?.data?.role;
+            state.role = action?.payload?.data?.role || "";
 
-            state.data = action?.payload?.data?.userData;
+            state.data = action?.payload?.data?.userData || {};
 
-            const token = action?.payload?.token || action?.payload?.data?.token || '';
-            state.token = token;
-
-            // STORE IN LOCAL STORAGE
-
-            localStorage.setItem(
-                'isLoggedIn',
-                'true'
-            );
-
-            localStorage.setItem(
-                'role',
-                action?.payload?.data?.role || ''
-            );
-
+            // DISPLAY-ONLY CACHE (survives refresh for navbar name/avatar)
             localStorage.setItem(
                 'data',
-                JSON.stringify(
-                    action?.payload?.data?.userData || {}
-                )
+                JSON.stringify(state.data)
             );
-
-            if (token) {
-                localStorage.setItem('token', token);
-            }
         })
 
-        // ================= LOGOUT SUCCESS =================
+        // ================= LOGOUT (success OR failure → clear locally) =================
 
         .addCase(logout.fulfilled, (state) => {
+            clearAuthState(state);
+        })
 
-            localStorage.setItem(
-                'isLoggedIn',
-                'false'
-            );
-
-            localStorage.setItem(
-                'role',
-                ''
-            );
-
-            localStorage.setItem(
-                'token',
-                ''
-            );
-
-            localStorage.setItem(
-                'data',
-                JSON.stringify({})
-            );
-
-            state.isLoggedIn = false;
-
-            state.role = '';
-
-            state.token = '';
-
-            state.data = {};
+        .addCase(logout.rejected, (state) => {
+            clearAuthState(state);
         });
     }
 });
+
+export const { forceLogout } = AuthSlice.actions;
 
 export default AuthSlice.reducer;

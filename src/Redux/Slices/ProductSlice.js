@@ -4,6 +4,8 @@ import toast from "react-hot-toast";
 
 const initialState = {
     productsData: [],
+    productsLoading: false,
+    productsLoaded: false, // cache flag — don't refetch on every menu visit
 };
 
 // ================= GET ALL PRODUCTS =================
@@ -15,17 +17,16 @@ export const getAllProducts = createAsyncThunk(
 
         try {
 
-            const products = axiosInstance.get('/products');
-
-            const apiResponse = await products;
+            const apiResponse = await axiosInstance.get('/products');
 
             return apiResponse.data;
 
         } catch (error) {
 
-            console.log(error);
-
-            toast.error("Failed to load products");
+            toast.error(
+                error?.response?.data?.message || "Failed to load products",
+                { id: "products-error" }
+            );
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -43,19 +44,18 @@ export const productDetails = createAsyncThunk(
 
         try {
 
-            const product = axiosInstance.get(
+            const apiResponse = await axiosInstance.get(
                 `/products/${id}`
             );
-
-            const apiResponse = await product;
 
             return apiResponse.data;
 
         } catch (error) {
 
-            console.log(error);
-
-            toast.error("Failed to load product details");
+            toast.error(
+                error?.response?.data?.message || "Failed to load product details",
+                { id: "product-details-error" }
+            );
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -77,17 +77,23 @@ const productSlice = createSlice({
 
         builder
 
-        .addCase(getAllProducts.fulfilled, (state, action) => {
+        .addCase(getAllProducts.pending, (state) => {
+            state.productsLoading = true;
+        })
 
-            console.log(action.payload);
+        .addCase(getAllProducts.fulfilled, (state, action) => {
 
             state.productsData =
                 action?.payload?.data || [];
+
+            state.productsLoading = false;
+            state.productsLoaded = true;
         })
 
         .addCase(getAllProducts.rejected, (state) => {
 
             state.productsData = [];
+            state.productsLoading = false;
         });
     }
 });

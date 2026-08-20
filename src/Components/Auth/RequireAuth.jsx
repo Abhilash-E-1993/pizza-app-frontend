@@ -1,19 +1,32 @@
 import { useSelector } from "react-redux";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-function Requireauth({ requiredRole }){
-    const { isLoggedIn, role } = useSelector((state) => state.auth);
-    const userRole = role?.toLowerCase();
+function RequireAuth({ requiredRole }) {
+    const { isLoggedIn, role, authChecked } = useSelector((state) => state.auth);
+    const location = useLocation();
 
-    if (!isLoggedIn) {
-        return <Navigate to={'/auth/login'} replace />;
+    // App.jsx already blocks rendering until the session check resolves —
+    // this is just a safety net so a protected page can never flash.
+    if (!authChecked) {
+        return null;
     }
 
-    if (requiredRole && userRole !== requiredRole.toLowerCase()) {
-        return <Navigate to={'/denied'} replace />;
+    if (!isLoggedIn) {
+        // Remember where the user wanted to go so login can send them back.
+        return (
+            <Navigate
+                to="/auth/login"
+                state={{ from: location.pathname + location.search }}
+                replace
+            />
+        );
+    }
+
+    if (requiredRole && role?.toLowerCase() !== requiredRole.toLowerCase()) {
+        return <Navigate to="/denied" replace />;
     }
 
     return <Outlet />;
 }
 
-export default Requireauth;
+export default RequireAuth;

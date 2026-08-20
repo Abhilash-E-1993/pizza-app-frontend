@@ -2,32 +2,33 @@ import { useNavigate } from "react-router-dom";
 
 function Denied() {
 
-    const navigate = useNavigate(); // programitcally navigate to the previous page
+    const navigate = useNavigate();
 
     return (
-        <>
-      <main className="flex flex-col items-center justify-center w-full h-screen bg-gradient-to-r from-amber-50 to-orange-300">
-        <h1 className="font-extrabold tracking-widest text-white text-9xl">
-          403
-        </h1>
-        <div className="absolute px-2 text-sm text-white bg-black rounded rotate-12">
-          Access Denied
-        </div>
-        <button className="mt-5" onClick={() => navigate(-1)}>
-          <a className="relative inline-block text-sm font-medium text-[#fff] group active:text-yellow-500 focus:outline-none focus:ring">
-            <span className="absolute inset-0 transition-transform translate-x-0.5 translate-y-0.5 bg-[#EAB308] group-hover:translate-y-0 group-hover:translate-x-0" />
-
-            <span
-                
-                className="relative block px-8 py-3 bg-[#EAB308] border border-current"
-            >
-              Go Back
-            </span>
-          </a>
-        </button>
-      </main>
-    </>
-    )
+        <main className="min-h-screen bg-gray-50 flex items-center justify-center px-5">
+            <div className="bg-white border border-gray-100 rounded-2xl p-10 max-w-sm w-full text-center shadow-sm">
+                <p className="text-6xl font-semibold text-gray-900 mb-2">403</p>
+                <p className="text-sm font-medium text-gray-900 mb-1">Access denied</p>
+                <p className="text-sm text-gray-400 mb-6">
+                    You don&rsquo;t have permission to view this page.
+                </p>
+                <div className="flex flex-col gap-2">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="w-full py-2.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition"
+                    >
+                        Go back
+                    </button>
+                    <button
+                        onClick={() => navigate("/")}
+                        className="w-full py-2.5 text-sm text-gray-500 border border-gray-100 rounded-lg hover:bg-gray-50 transition"
+                    >
+                        Go home
+                    </button>
+                </div>
+            </div>
+        </main>
+    );
 }
 
 export default Denied;

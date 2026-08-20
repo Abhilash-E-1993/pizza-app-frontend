@@ -1,25 +1,31 @@
 import { useState } from "react";
 import { login } from "../../Redux/Slices/AuthSlice";
-import { getCartDetails } from "../../Redux/Slices/CartSlice";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import LoginPresentation from "./LoginPresentation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Login() {
 
     const dispatch = useDispatch();
-
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Where the user originally wanted to go (set by RequireAuth)
+    const from = location.state?.from || "/products";
 
     const [loginData, setLoginData] = useState({
         email: '',
         password: ''
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     function handleUserInput(e) {
 
         const { name, value } = e.target;
+
+        setErrorMessage("");
 
         setLoginData({
             ...loginData,
@@ -35,7 +41,7 @@ function Login() {
 
         if (!loginData.email || !loginData.password) {
 
-            toast.error("All fields are mandatory");
+            toast.error("All fields are mandatory", { id: "auth-error" });
 
             return;
         }
@@ -47,10 +53,13 @@ function Login() {
             !loginData.email.includes('.')
         ) {
 
-            toast.error("Invalid email address");
+            toast.error("Invalid email address", { id: "auth-error" });
 
             return;
         }
+
+        setIsSubmitting(true);
+        setErrorMessage("");
 
         try {
 
@@ -58,34 +67,19 @@ function Login() {
                 login(loginData)
             ).unwrap();
 
-            console.log("LOGIN RESPONSE", apiResponse);
-
-            // SUCCESS
-
+            // SUCCESS — state is already set by the slice; go back to where
+            // the user was headed (or the menu). The cart is fetched by Layout.
             if (apiResponse?.success) {
-
-                toast.success(
-                    apiResponse?.message
-                );
-
-                // LOAD CART AFTER LOGIN
-                await dispatch(getCartDetails()).unwrap().catch(() => {
-                    // ignore cart fetch failure here; Layout will handle auth state cleanup if needed
-                });
-
-                // SMALL DELAY FOR STATE UPDATE
-                setTimeout(() => {
-                    navigate("/");
-                }, 500);
+                navigate(from, { replace: true });
             }
 
         } catch (error) {
 
-            console.log(error);
+            // Backend message shown inline ("Invalid credentials", etc.)
+            setErrorMessage(error?.message || "Login failed. Please try again.");
 
-            toast.error(
-                error?.message || "Login failed"
-            );
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -93,6 +87,9 @@ function Login() {
         <LoginPresentation
             handleFormSubmit={handleFormSubmit}
             handleUserInput={handleUserInput}
+            loginData={loginData}
+            isSubmitting={isSubmitting}
+            errorMessage={errorMessage}
         />
     );
 }

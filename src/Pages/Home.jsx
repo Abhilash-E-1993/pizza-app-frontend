@@ -1,8 +1,8 @@
-import pizzaImage from "../assets/Images/pizzaImage.png";
-import cookingImage from "../assets/Images/cookImage.png";
-import OrderFood from "../assets/Images/foodOrder.png";
-import pickUpImage from "../assets/Images/pickup.png";
-import enjoyImage from "../assets/Images/enjoy.png";
+import pizzaImage from "../assets/images/pizzaImage.png";
+import cookingImage from "../assets/images/cookImage.png";
+import OrderFood from "../assets/images/foodOrder.png";
+import pickUpImage from "../assets/images/pickup.png";
+import enjoyImage from "../assets/images/enjoy.png";
 import Layout from "../Layouts/Layout";
 import { Link } from "react-router-dom";
 
@@ -19,7 +19,7 @@ function Home() {
                             Fresh · Fast · Delicious
                         </span>
                         <h1 className="text-4xl md:text-5xl font-semibold text-gray-900 leading-tight mb-4">
-                            Pizza, the way<br />it's meant to be.
+                            Pizza, the way<br />it&rsquo;s meant to be.
                         </h1>
                         <p className="text-gray-400 text-base leading-relaxed mb-8 max-w-sm mx-auto md:mx-0">
                             Order from our menu, choose your toppings, and get it delivered hot to your door.
@@ -140,7 +140,7 @@ function Home() {
             <section className="bg-white">
                 <div className="max-w-6xl mx-auto px-5 py-16 text-center">
                     <h2 className="text-2xl font-semibold text-gray-900 mb-3">Ready to order?</h2>
-                    <p className="text-sm text-gray-400 mb-6">Fresh pizzas, fast delivery. What's not to love.</p>
+                    <p className="text-sm text-gray-400 mb-6">Fresh pizzas, fast delivery. What&rsquo;s not to love.</p>
                     <Link
                         to="/products"
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition"

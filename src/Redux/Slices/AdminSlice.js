@@ -6,7 +6,9 @@ const initialState = {
     AddedProducts: [],
 };
 
-// ================= ADD PRODUCT =================
+// ================= ADD PRODUCT (ADMIN) =================
+// 401/403 are handled globally by the axios interceptor (single toast +
+// redirect) — here we only surface the operation result via toast.promise.
 
 export const AddProducts = createAsyncThunk(
     "/add/products",
@@ -15,8 +17,6 @@ export const AddProducts = createAsyncThunk(
 
         try {
 
-            console.log("incoming data", data);
-
             const response = axiosInstance.post(
                 '/products/create',
                 data
@@ -24,20 +24,15 @@ export const AddProducts = createAsyncThunk(
 
             toast.promise(response, {
                 loading: "Adding product...",
-                error: 'Product not added',
-                success: 'Product added successfully'
-            });
+                success: "Product added successfully",
+                error: (err) => err?.response?.data?.message || "Product not added",
+            }, { id: "add-product" });
 
             const apiResponse = await response;
 
-            // IMPORTANT FIX
             return apiResponse.data;
 
         } catch (error) {
-
-            console.log(error);
-
-            toast.error("Product not added");
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data
@@ -46,7 +41,7 @@ export const AddProducts = createAsyncThunk(
     }
 );
 
-// ================= DELETE PRODUCT =================
+// ================= DELETE PRODUCT (ADMIN) =================
 
 export const deleteProductById = createAsyncThunk(
     "/delete/product",
@@ -61,19 +56,15 @@ export const deleteProductById = createAsyncThunk(
 
             toast.promise(response, {
                 loading: "Deleting product...",
-                error: 'Product not deleted',
-                success: 'Product deleted successfully'
-            });
+                success: "Product deleted successfully",
+                error: (err) => err?.response?.data?.message || "Product not deleted",
+            }, { id: "delete-product" });
 
             const apiResponse = await response;
 
             return apiResponse.data;
 
         } catch (error) {
-
-            console.log(error);
-
-            toast.error("Product not deleted");
 
             return thunkAPI.rejectWithValue(
                 error?.response?.data

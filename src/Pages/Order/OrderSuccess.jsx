@@ -17,15 +17,15 @@ function OrderSuccess() {
 
                     <h2 className="text-lg font-semibold text-gray-900 mb-1">Order placed</h2>
                     <p className="text-sm text-gray-400 mb-6">
-                        We've received your order and it's being prepared.
+                        We&rsquo;ve received your order and it&rsquo;s being prepared.
                     </p>
 
                     <div className="flex flex-col gap-2">
                         <button
-                            onClick={() => navigate("/")}
+                            onClick={() => navigate("/orders")}
                             className="w-full py-2.5 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition"
                         >
-                            Go home
+                            View my orders
                         </button>
                         <button
                             onClick={() => navigate("/products")}
