@@ -135,6 +135,7 @@ function clearAuthState(state) {
     state.role = "";
     state.data = {};
     localStorage.removeItem("data");
+    localStorage.removeItem("token");
 }
 
 const AuthSlice = createSlice({
@@ -178,6 +179,11 @@ const AuthSlice = createSlice({
             state.role = action?.payload?.data?.role || "";
 
             state.data = action?.payload?.data?.userData || {};
+
+            // Save token for cross-domain Authorization header fallback
+            if (action?.payload?.token) {
+                localStorage.setItem('token', action.payload.token);
+            }
 
             // DISPLAY-ONLY CACHE (survives refresh for navbar name/avatar)
             localStorage.setItem(

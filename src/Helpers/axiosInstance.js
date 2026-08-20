@@ -1,12 +1,24 @@
 import axios from "axios";
 
 // Single shared axios instance for the whole app.
-// Auth is an httpOnly cookie (`token`) — the browser sends it automatically
-// because of `withCredentials: true`. JS can never read it.
+// Auth uses httpOnly cookie (`token`) AND Authorization header fallback
+// to guarantee support across cross-domain deployments (Netlify + Render).
 const axiosInstance = axios.create({
     baseURL: import.meta.env.VITE_BACKEND_URL,
     withCredentials: true,
 });
+
+// Attach Authorization header if token exists in localStorage
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
 // 401s from these URLs are part of the normal auth flow
 // (failed login attempt / "am I logged in?" check) — never treat
